@@ -8,7 +8,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from time import *
 
-class WalletProtectCoinbaseTest (BitcoinTestFramework):
+class Wallet2Test (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

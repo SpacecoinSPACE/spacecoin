@@ -1,4 +1,4 @@
-rust_packages := rust librustzcash
+#rust_packages := rust librustzcash
 zcash_packages := libsnark libgmp libsodium
 
 ifeq ($(host_os),linux)
