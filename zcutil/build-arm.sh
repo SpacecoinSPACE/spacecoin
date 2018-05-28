@@ -37,5 +37,5 @@ PREFIX="$(pwd)/depends/aarch64-unknown-linux-gnu/"
 
 HOST=aarch64-unknown-linux-gnu BUILD=aarch64-unknown-linux-gnu make "$@" -C ./depends/ V=1 NO_QT=1
 ./autogen.sh
-./configure --prefix="${PREFIX}" --host=aarch64-unknown-linux-gnu --build=aarch64-unknown-linux-gnu --with-gui=no --enable-rust=no "$HARDENING_ARG" "$LCOV_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
+./configure --prefix="${PREFIX}" --host=aarch64-unknown-linux-gnu --build=aarch64-unknown-linux-gnu --with-gui=no --enable-rust=no --disable-proton "$HARDENING_ARG" "$LCOV_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
 make "$@" V=1

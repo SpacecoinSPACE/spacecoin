@@ -644,9 +644,8 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
-    extern uint16_t BITCOIND_PORT;
-    BITCOIND_PORT = GetArg("-rpcport",BaseParams().RPCPort());
-    //fprintf(stderr,"from conf file %s RPC %u, used to be %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,BITCOIND_PORT);
+    extern uint16_t BITCOIND_RPCPORT;
+    BITCOIND_RPCPORT = GetArg("-rpcport",BaseParams().RPCPort());
 }
 
 #ifndef _WIN32
@@ -926,7 +925,7 @@ std::string PrivacyInfo()
 {
     return "\n" +
            FormatParagraph(strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see <%s>."),
-                                     "https://z.cash/support/security/index.html")) + "\n";
+                                     "https://z.cash/support/security/")) + "\n";
 }
 
 std::string LicenseInfo()
@@ -940,6 +939,12 @@ std::string LicenseInfo()
            "\n" +
            FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
            "\n" +
-           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) +
+           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young.")) +
            "\n";
 }
+
+int GetNumCores()
+{
+    return boost::thread::physical_concurrency();
+}
+
