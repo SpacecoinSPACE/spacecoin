@@ -86,6 +86,8 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();
 
+    if ( Params().NetworkIDString() == "regtest" )
+        return(true);
     // Hash state
     crypto_generichash_blake2b_state state;
     EhInitialiseState(n, k, state);
@@ -170,7 +172,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
             else if ( height >= 80000 && height < 108000 && special2 > 0 )
                 flag = 1;
             else if ( height >= 108000 && special2 > 0 )
-                flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
+                flag = (height > 1000000 || (height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
             else if ( height == 790833 )
                 flag = 1;
             else if ( special2 < 0 )
@@ -188,6 +190,11 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
+    if (  ASSETCHAINS_STAKED != 0 )
+    {
+        arith_uint256 bnMaxPoSdiff;
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    }
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
@@ -196,6 +203,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
         if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
         {
             //if ( 0 && height > 792000 )
+            if ( Params().NetworkIDString() != "regtest" )
             {
                 for (i=31; i>=0; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);

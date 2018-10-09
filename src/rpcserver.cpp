@@ -280,6 +280,7 @@ static const CRPCCommand vRPCCommands[] =
     { "network",            "clearbanned",            &clearbanned,            true  },
 
     /* Block chain and UTXO */
+    { "blockchain",         "coinsupply",             &coinsupply,             true  },
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true  },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true  },
     { "blockchain",         "getblockcount",          &getblockcount,          true  },
@@ -298,18 +299,27 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
     { "blockchain",         "getspentinfo",           &getspentinfo,           false },
-    { "blockchain",         "paxprice",               &paxprice,               true  },
-    { "blockchain",         "paxpending",             &paxpending,             true  },
-    { "blockchain",         "paxprices",              &paxprices,              true  },
+    //{ "blockchain",         "paxprice",               &paxprice,               true  },
+    //{ "blockchain",         "paxpending",             &paxpending,             true  },
+    //{ "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
-    { "blockchain",         "allMoMs",                &allMoMs,                true  },
-    { "blockchain",         "MoMoMdata",              &MoMoMdata,              true  },
-    { "blockchain",         "calc_MoM",               &calc_MoM,             true  },
-    { "blockchain",         "height_MoM",             &height_MoM,             true  },
-    { "blockchain",         "txMoMproof",             &txMoMproof,             true  },
+    //{ "blockchain",         "height_MoM",             &height_MoM,             true  },
+    //{ "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
+
+    /* Cross chain utilities */
+    { "crosschain",         "MoMoMdata",              &MoMoMdata,              true  },
+    { "crosschain",         "calc_MoM",               &calc_MoM,               true  },
+    { "crosschain",         "height_MoM",             &height_MoM,             true  },
+    { "crosschain",         "assetchainproof",        &assetchainproof,        true  },
+    { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
+    { "crosschain",         "getNotarisationsForBlock", &getNotarisationsForBlock, true },
+    { "crosschain",         "scanNotarisationsDB",    &scanNotarisationsDB,    true },
+    { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
+    { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
+    { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -338,6 +348,113 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
+    /* auction */
+    { "auction",       "auctionaddress",    &auctionaddress,  true },
+    
+    /* lotto */
+    { "lotto",       "lottoaddress",    &lottoaddress,  true },
+    
+    /* fsm */
+    { "FSM",       "FSMaddress",   &FSMaddress, true },
+    { "FSM", "FSMcreate",    &FSMcreate,  true },
+    { "FSM",   "FSMlist",      &FSMlist,    true },
+    { "FSM",   "FSMinfo",      &FSMinfo,    true },
+    
+    /* rewards */
+    { "rewards",       "rewardslist",       &rewardslist,     true },
+    { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
+    { "rewards",       "rewardscreatefunding",       &rewardscreatefunding,     true },
+    { "rewards",       "rewardsaddfunding",       &rewardsaddfunding,     true },
+    { "rewards",       "rewardslock",       &rewardslock,     true },
+    { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
+    { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
+    
+    /* faucet */
+    { "faucet",       "faucetinfo",      &faucetinfo,         true },
+    { "faucet",       "faucetfund",      &faucetfund,         true },
+    { "faucet",       "faucetget",       &faucetget,          true },
+    { "faucet",       "faucetaddress",   &faucetaddress,      true },
+    
+    /* MofN */
+    { "MofN",       "mofnaddress",   &mofnaddress,      true },
+    
+    /* Channels */
+    { "channels",       "channelsaddress",   &channelsaddress,   true },
+    { "channels",       "channelsinfo",      &channelsinfo,      true },
+    { "channels",       "channelsopen",      &channelsopen,      true },
+    { "channels",       "channelspayment",   &channelspayment,   true },
+    { "channels",       "channelscollect",   &channelscollect,   true },
+    { "channels",       "channelsstop",      &channelsstop,      true },
+    { "channels",       "channelsrefund",    &channelsrefund,    true },
+    
+    /* Oracles */
+    { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
+    { "oracles",       "oracleslist",      &oracleslist,        true },
+    { "oracles",       "oraclesinfo",      &oraclesinfo,        true },
+    { "oracles",       "oraclescreate",    &oraclescreate,      true },
+    { "oracles",       "oraclesregister",  &oraclesregister,    true },
+    { "oracles",       "oraclessubscribe", &oraclessubscribe,   true },
+    { "oracles",       "oraclesdata",      &oraclesdata,        true },
+    { "oracles",       "oraclessamples",   &oraclessamples,     true },
+    
+    /* Prices */
+    { "prices",       "pricesaddress",      &pricesaddress,      true },
+    { "prices",       "priceslist",         &priceslist,         true },
+    { "prices",       "pricesinfo",         &pricesinfo,         true },
+    { "prices",       "pricescreate",       &pricescreate,       true },
+    { "prices",       "pricesaddfunding",   &pricesaddfunding,   true },
+    { "prices",       "pricesbet",          &pricesbet,          true },
+    { "prices",       "pricesstatus",       &pricesstatus,       true },
+    { "prices",       "pricesfinish",       &pricesfinish,       true },
+    
+    /* Pegs */
+    { "pegs",       "pegsaddress",   &pegsaddress,      true },
+    
+    /* Triggers */
+    { "triggers",       "triggersaddress",   &triggersaddress,      true },
+    
+    /* Payments */
+    { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    
+    /* Gateways */
+    { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
+    { "gateways",       "gatewayslist",      &gatewayslist,         true },
+    { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
+    { "gateways",       "gatewaysbind",      &gatewaysbind,         true },
+    { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
+    { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
+    { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
+    { "gateways",       "gatewayspending",   &gatewayspending,      true },
+    { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
+    { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
+
+    /* dice */
+    { "dice",       "dicelist",      &dicelist,         true },
+    { "dice",       "diceinfo",      &diceinfo,         true },
+    { "dice",       "dicefund",      &dicefund,         true },
+    { "dice",       "diceaddfunds",  &diceaddfunds,     true },
+    { "dice",       "dicebet",       &dicebet,          true },
+    { "dice",       "dicefinish",    &dicefinish,       true },
+    { "dice",       "dicestatus",    &dicestatus,       true },
+    { "dice",       "diceaddress",   &diceaddress,      true },
+
+    /* tokens */
+    { "tokens",       "tokeninfo",        &tokeninfo,         true },
+    { "tokens",       "tokenlist",        &tokenlist,         true },
+    { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "tokenaddress",     &tokenaddress,      true },
+    { "tokens",       "tokenbalance",     &tokenbalance,      true },
+    { "tokens",       "tokencreate",      &tokencreate,       true },
+    { "tokens",       "tokentransfer",    &tokentransfer,     true },
+    { "tokens",       "tokenbid",         &tokenbid,          true },
+    { "tokens",       "tokencancelbid",   &tokencancelbid,    true },
+    { "tokens",       "tokenfillbid",     &tokenfillbid,      true },
+    { "tokens",       "tokenask",         &tokenask,          true },
+    //{ "tokens",       "tokenswapask",     &tokenswapask,      true },
+    { "tokens",       "tokencancelask",   &tokencancelask,    true },
+    { "tokens",       "tokenfillask",     &tokenfillask,      true },
+    //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
+    { "tokens",       "tokenconvert",         &tokenconvert,          true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
@@ -345,6 +462,7 @@ static const CRPCCommand vRPCCommands[] =
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },
+    { "addressindex",       "getsnapshot",            &getsnapshot,            false },
 
     /* Utility functions */
     { "util",               "createmultisig",         &createmultisig,         true  },
@@ -377,7 +495,9 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "getaccount",             &getaccount,             true  },
     { "wallet",             "getaddressesbyaccount",  &getaddressesbyaccount,  true  },
     { "wallet",             "getbalance",             &getbalance,             false },
+    { "wallet",             "getbalance64",           &getbalance64,             false },
     { "wallet",             "getnewaddress",          &getnewaddress,          true  },
+//    { "wallet",             "getnewaddress64",        &getnewaddress64,          true  },
     { "wallet",             "getrawchangeaddress",    &getrawchangeaddress,    true  },
     { "wallet",             "getreceivedbyaccount",   &getreceivedbyaccount,   false },
     { "wallet",             "getreceivedbyaddress",   &getreceivedbyaddress,   false },

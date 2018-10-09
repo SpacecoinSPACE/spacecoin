@@ -197,6 +197,7 @@ const char *Notaries_elected1[][2] =
     {"webworker01_NA", "03bb7d005e052779b1586f071834c5facbb83470094cff5112f0072b64989f97d7" },
     {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
 };
+#define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
@@ -384,18 +385,35 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 
 //struct komodo_state *komodo_stateptr(char *symbol,char *dest);
 
-struct notarized_checkpoint *komodo_npptr(int32_t height)
+struct notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         for (i=sp->NUM_NPOINTS-1; i>=0; i--)
         {
+            *idx = i;
             np = &sp->NPOINTS[i];
-            if ( np->MoMdepth > 0 && height > np->notarized_height-np->MoMdepth && height <= np->notarized_height )
+            if ( np->MoMdepth != 0 && height > np->notarized_height-(np->MoMdepth&0xffff) && height <= np->notarized_height )
                 return(np);
         }
     }
+    *idx = -1;
+    return(0);
+}
+
+struct notarized_checkpoint *komodo_npptr(int32_t height)
+{
+    int idx;
+    return komodo_npptr_for_height(height, &idx);
+}
+
+struct notarized_checkpoint *komodo_npptr_at(int idx)
+{
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+        if (idx < sp->NUM_NPOINTS)
+            return &sp->NPOINTS[idx];
     return(0);
 }
 
@@ -447,7 +465,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
         *MoMoMdepthp = np->MoMoMdepth;
         *kmdstartip = np->kmdstarti;
         *kmdendip = np->kmdendi;
-        return(np->MoMdepth);
+        return(np->MoMdepth & 0xffff);
     }
     *notarized_htp = *MoMoMoffsetp = *MoMoMdepthp = *kmdstartip = *kmdendip = 0;
     memset(MoMp,0,sizeof(*MoMp));
