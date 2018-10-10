@@ -1,4 +1,7 @@
-#rust_packages := rust librustzcash
+ifneq ($(host_arch), aarch64)
+ rust_packages := rust librustzcash
+endif
+
 zcash_packages := libsnark libgmp libsodium
 
 ifeq ($(build_os),darwin)
