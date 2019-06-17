@@ -285,6 +285,7 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   cc/eval.cpp \
   cc/import.cpp \
+  cc/importgateway.cpp \
   cc/CCassetsCore.cpp \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
@@ -487,7 +488,7 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   transaction_builder.cpp \
-  cc/CCtokensOpRet.cpp \
+  cc/CCtokenutils.cpp \
   cc/CCutilbits.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
@@ -519,6 +520,11 @@ libbitcoin_util_a_SOURCES = \
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
 endif
+
+if ENABLE_TESTS
+libbitcoin_server_a_SOURCES += rpc/testtransactions.cpp
+endif
+
 
 # cli: zcash-cli
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -588,11 +594,19 @@ if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
 endif
 
+# [+] Decker: use static linking for libstdc++.6.dylib, libgomp.1.dylib, libgcc_s.1.dylib
+if TARGET_DARWIN
+komodod_LDFLAGS += -static-libgcc
+endif
+
 # bitcoin-cli binary #
 komodo_cli_SOURCES = bitcoin-cli.cpp
 komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+if TARGET_DARWIN
+komodo_cli_LDFLAGS += -static-libgcc
+endif
 
 # wallet-utility binary #
 if ENABLE_WALLET

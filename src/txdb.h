@@ -116,6 +116,7 @@ public:
     bool LoadBlockIndexGuts();
     bool blockOnchainActive(const uint256 &hash);
     UniValue Snapshot(int top);
+    bool Snapshot2(std::map <std::string, CAmount> &addressAmounts, UniValue *ret);
 };
 
 #endif // BITCOIN_TXDB_H

@@ -108,6 +108,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "lockunspent", 0 },
     { "lockunspent", 1 },
     { "importprivkey", 2 },
+    { "importprivkey", 3 },
     { "importaddress", 2 },
     { "verifychain", 0 },
     { "verifychain", 1 },
@@ -171,8 +172,10 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "assetchainproof", 1},
     { "crosschainproof", 1},
     { "getproofroot", 2},
+    { "getNotarisationsForBlock", 0},
     { "height_MoM", 1},
     { "calc_MoM", 2},
+    { "migrate_completeimporttransaction", 1},
 };
 
 class CRPCConvertTable

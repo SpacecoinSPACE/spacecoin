@@ -35,6 +35,7 @@
 #include "httprpc.h"
 #include "key.h"
 #include "notarisationdb.h"
+
 #ifdef ENABLE_MINING
 #include "key_io.h"
 #endif
@@ -55,6 +56,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
+
 #endif
 #include <stdint.h>
 #include <stdio.h>
@@ -89,9 +91,11 @@
 using namespace std;
 
 extern void ThreadSendAlert();
+extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
 extern bool VERUS_MINTBLOCKS;
 extern char ASSETCHAINS_SYMBOL[];
+extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 ZCJoinSplit* pzcashParams = NULL;
 
@@ -367,6 +371,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), 288));
     strUsage += HelpMessageOpt("-checklevel=<n>", strprintf(_("How thorough the block verification of -checkblocks is (0-4, default: %u)"), 3));
+    strUsage += HelpMessageOpt("-clientname=<SomeName>", _("Full node client name, default 'MagicBean'"));
     strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), "komodo.conf"));
     if (mode == HMM_BITCOIND)
     {
@@ -450,6 +455,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), "wallet.dat"));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), true));
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
+    strUsage += HelpMessageOpt("-whitelistaddress=<Raddress>", _("Enable the wallet filter for notary nodes and add one Raddress to the whitelist of the wallet filter. If -whitelistaddress= is used, then the wallet filter is automatically activated. Several Raddresses can be defined using several -whitelistaddress= (similar to -addnode). The wallet filter will filter the utxo to only ones coming from my own Raddress (derived from pubkey) and each Raddress defined using -whitelistaddress= this option is mostly for Notary Nodes)."));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +
         " " + _("(1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)"));
 #endif
@@ -1620,6 +1626,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     strLoadError = _("You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain");
                     break;
                 }
+                
+                if ( ASSETCHAINS_CC != 0 && KOMODO_SNAPSHOT_INTERVAL != 0 && chainActive.Height() >= KOMODO_SNAPSHOT_INTERVAL )
+                {
+                    if ( !komodo_dailysnapshot(chainActive.Height()) )
+                    {
+                        strLoadError = _("daily snapshot failed, please reindex your chain.");
+                        break;
+                    }
+                }
 
                 if (!fReindex) {
                     uiInterface.InitMessage(_("Rewinding blocks if needed..."));
@@ -1885,7 +1900,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         uiInterface.InitMessage(_("Activating best chain..."));
         // scan for better chains in the block chain database, that are not yet connected in the active best chain
         CValidationState state;
-        if ( !ActivateBestChain(state))
+        if ( !ActivateBestChain(true,state))
             strErrors << "Failed to connect best block";
     }
     std::vector<boost::filesystem::path> vImportFiles;

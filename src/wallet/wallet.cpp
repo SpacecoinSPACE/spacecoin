@@ -38,6 +38,7 @@
 #include "crypter.h"
 #include "coins.h"
 #include "zcash/zip32.h"
+#include "cc/CCinclude.h"
 
 #include <assert.h>
 
@@ -184,6 +185,7 @@ bool CWallet::AddSaplingZKey(
         return false;
     }
 
+    nTimeFirstKey = 1; // No birthday information for viewing keys.
     if (!fFileBacked) {
         return true;
     }
@@ -1540,26 +1542,29 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         }
         else {
             uint64_t position = nd.witnesses.front().position();
-            SaplingFullViewingKey fvk = mapSaplingFullViewingKeys.at(nd.ivk);
-            OutputDescription output = wtx.vShieldedOutput[op.n];
-            auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cm);
-            if (!optPlaintext) {
-                // An item in mapSaplingNoteData must have already been successfully decrypted,
-                // otherwise the item would not exist in the first place.
-                assert(false);
+            // Skip if we only have incoming viewing key
+            if (mapSaplingFullViewingKeys.count(nd.ivk) != 0) {
+                SaplingFullViewingKey fvk = mapSaplingFullViewingKeys.at(nd.ivk);
+                OutputDescription output = wtx.vShieldedOutput[op.n];
+                auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cm);
+                if (!optPlaintext) {
+                    // An item in mapSaplingNoteData must have already been successfully decrypted,
+                    // otherwise the item would not exist in the first place.
+                    assert(false);
+                }
+                auto optNote = optPlaintext.get().note(nd.ivk);
+                if (!optNote) {
+                    assert(false);
+                }
+                auto optNullifier = optNote.get().nullifier(fvk, position);
+                if (!optNullifier) {
+                    // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
+                    assert(false);
+                }
+                uint256 nullifier = optNullifier.get();
+                mapSaplingNullifiersToNotes[nullifier] = op;
+                item.second.nullifier = nullifier;
             }
-            auto optNote = optPlaintext.get().note(nd.ivk);
-            if (!optNote) {
-                assert(false);
-            }
-            auto optNullifier = optNote.get().nullifier(fvk, position);
-            if (!optNullifier) {
-                // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
-                assert(false);
-            }
-            uint256 nullifier = optNullifier.get();
-            mapSaplingNullifiersToNotes[nullifier] = op;
-            item.second.nullifier = nullifier;
         }
     }
 }
@@ -1747,10 +1752,6 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * pblock is optional, but should be provided if the transaction is known to be in a block.
  * If fUpdate is true, existing transactions will be updated.
  */
-extern uint8_t NOTARY_PUBKEY33[33];
-extern std::string NOTARY_ADDRESS,WHITELIST_ADDRESS;
-extern int32_t IS_STAKED_NOTARY;
-extern uint64_t MIN_RECV_SATS;
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -1769,71 +1770,49 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 return false;
             }
         }
+        static std::string NotaryAddress; static bool didinit;
+        if ( !didinit && NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+        {
+            didinit = true;
+            char Raddress[64]; 
+            pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+            NotaryAddress.assign(Raddress);
+            vWhiteListAddress = mapMultiArgs["-whitelistaddress"];
+            if ( !vWhiteListAddress.empty() )
+            {
+                fprintf(stderr, "Activated Wallet Filter \n  Notary Address: %s \n  Adding whitelist address's:\n", NotaryAddress.c_str());
+                for ( auto wladdr : vWhiteListAddress )
+                    fprintf(stderr, "    %s\n", wladdr.c_str());
+            }
+        }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
-            // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
-            if ( 0 && !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            // wallet filter for notary nodes. Enables by setting -whitelistaddress= as startup param or in conf file (works same as -addnode byut with R-address's)
+            if ( !tx.IsCoinBase() && !vWhiteListAddress.empty() && !NotaryAddress.empty() ) 
             {
-                int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
+                int numvinIsOurs = 0, numvinIsWhiteList = 0;  
                 for (size_t i = 0; i < tx.vin.size(); i++)
                 {
                     uint256 hash; CTransaction txin; CTxDestination address;
-                    if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
+                    if ( GetTransaction(tx.vin[i].prevout.hash,txin,hash,false) && ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address) )
                     {
-                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address))
+                        if ( CBitcoinAddress(address).ToString() == NotaryAddress )
+                            numvinIsOurs++;
+                        for ( auto wladdr : vWhiteListAddress )
                         {
-                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS )
-                                numvinIsOurs++;
-                            if ( !WHITELIST_ADDRESS.empty() )
+                            if ( CBitcoinAddress(address).ToString() == wladdr )
                             {
-                                //fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
-                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS ) {
-                                    //fprintf(stderr, "whitlisted is set to true here.\n");
-                                    numvinIsWhiteList++;
-                                }
+                                //fprintf(stderr, "We received from whitelisted address.%s\n", wladdr.c_str());
+                                numvinIsWhiteList++;
                             }
                         }
                     }
                 }
-                // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
+                // Now we know if it was a tx sent to us, by either a whitelisted address, or ourself.
                 if ( numvinIsOurs != 0 )
-                    fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
-                if ( numvinIsWhiteList != 0 )
-                    fprintf(stderr, "We received from whitelisted address: %s\n",WHITELIST_ADDRESS.c_str());
-                // Count vouts, check if OUR notary address is the receiver.
+                    fprintf(stderr, "We sent from address: %s vins: %d\n",NotaryAddress.c_str(),numvinIsOurs);
                 if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
-                {
-                    for (size_t i = 0; i < tx.vout.size() ; i++)
-                    {
-                        CTxDestination address2;
-                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2))
-                        {
-                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS )
-                            {
-                              numvoutIsOurs++;
-                              totalvoutvalue += tx.vout[i].nValue;
-                            }
-                        }
-                    }
-                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
-                    if ( MIN_RECV_SATS == 0 ) {
-                        fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
-                        return false;
-                    }
-                    // If no vouts are to the notary address we will ignore them.
-                    if ( numvoutIsOurs == 0 ) {
-                        fprintf(stderr, "Received transaction to address other than notary address, ignored! \n");
-                        return false;
-                    }
-                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,(int32_t)numvoutIsOurs);
-                    // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
-                    int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
-                    if ( avgVoutSize < MIN_RECV_SATS ) {
-                        // average vout size is less than set minimum, default is 1 coin, we will ignore it
-                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, (long)avgVoutSize);
-                        return false;
-                    }
-                }
+                    return false;
             }
 
             CWalletTx wtx(this,tx);
@@ -2016,23 +1995,40 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
     // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
     for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
         const OutputDescription output = tx.vShieldedOutput[i];
+        bool found = false;
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
             auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
-            if (!result) {
-                continue;
+            if (result) {
+                auto address = ivk.address(result.get().d);
+                if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
+                    viewingKeysToAdd[address.get()] = ivk;
+                }
+                // We don't cache the nullifier here as computing it requires knowledge of the note position
+                // in the commitment tree, which can only be determined when the transaction has been mined.
+                SaplingOutPoint op {hash, i};
+                SaplingNoteData nd;
+                nd.ivk = ivk;
+                noteData.insert(std::make_pair(op, nd));
+                found = true;
+                break;
             }
-            auto address = ivk.address(result.get().d);
-            if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
-                viewingKeysToAdd[address.get()] = ivk;
+        }
+        if (!found) {
+            for (auto it = mapSaplingIncomingViewingKeys.begin(); it != mapSaplingIncomingViewingKeys.end(); ++it) {
+                SaplingIncomingViewingKey ivk = it-> second;
+                auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
+                if (!result) {
+                    continue;
+                }
+                // We don't cache the nullifier here as computing it requires knowledge of the note position
+                // in the commitment tree, which can only be determined when the transaction has been mined.
+                SaplingOutPoint op {hash, i};
+                SaplingNoteData nd;
+                nd.ivk = ivk;
+                noteData.insert(std::make_pair(op, nd));
+                break;
             }
-            // We don't cache the nullifier here as computing it requires knowledge of the note position
-            // in the commitment tree, which can only be determined when the transaction has been mined.
-            SaplingOutPoint op {hash, i};
-            SaplingNoteData nd;
-            nd.ivk = ivk;
-            noteData.insert(std::make_pair(op, nd));
-            break;
         }
     }
 
@@ -2878,21 +2874,18 @@ void CWallet::ReacceptWalletTransactions()
             bool invalid = state.IsInvalid(nDoS);
 
             // log rejection and deletion
-            // printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
+            //printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
 
-            if (!wtx.IsCoinBase() && invalid && nDoS > 0)
+            if (!wtx.IsCoinBase() && invalid && nDoS > 0 && state.GetRejectReason() != "tx-overwinter-expired")
             {
                 LogPrintf("erasing transaction %s\n", wtx.GetHash().GetHex().c_str());
                 vwtxh.push_back(wtx.GetHash());
             }
         }
     }
-    if ( IsInitialBlockDownload() == 0 )
+    for (auto hash : vwtxh)
     {
-        for (auto hash : vwtxh)
-        {
-            EraseFromWallet(hash);
-        }
+        EraseFromWallet(hash);
     }
 }
 
@@ -2900,7 +2893,7 @@ bool CWalletTx::RelayWalletTransaction()
 {
     if ( pwallet == 0 )
     {
-        fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");
+        //fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");
         return(false);
     }
     assert(pwallet->GetBroadcastTransactions());
@@ -5095,6 +5088,22 @@ void CWallet::GetFilteredNotes(
 //
 // Shielded key and address generalizations
 //
+
+bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return m_wallet->HaveSproutViewingKey(zaddr);
+}
+
+bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    libzcash::SaplingIncomingViewingKey ivk;
+    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk);
+}
+
+bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
+{
+    return false;
+}
 
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {

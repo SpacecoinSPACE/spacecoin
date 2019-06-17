@@ -450,10 +450,12 @@ int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *m
     return(0);
 }
 
-cJSON *get_gatewayspending(char *refcoin,char *acname,char *bindtxidstr)
+cJSON *get_gatewayspending(int8_t type,char *refcoin,char *acname,char *bindtxidstr)
 {
-    cJSON *retjson; char *retstr;
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"gatewayspendingwithdraws",bindtxidstr,refcoin,"","")) != 0 )
+    cJSON *retjson; char *retstr; char function[64];
+    if (type==0) sprintf(function,"%s","gatewayspendingwithdraws");
+    else if (type==1) sprintf(function,"%s","importgatewaypendingwithdraws");
+    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
     {
         //printf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
@@ -466,10 +468,13 @@ cJSON *get_gatewayspending(char *refcoin,char *acname,char *bindtxidstr)
     return(0);
 }
 
-cJSON *get_gatewaysprocessed(char *refcoin,char *acname,char *bindtxidstr)
+cJSON *get_gatewaysprocessed(int8_t type,char *refcoin,char *acname,char *bindtxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"gatewaysprocessed",bindtxidstr,refcoin,"","")) != 0 )
+    char function[64];
+    if (type==0) sprintf(function,"%s","gatewaysprocessed");
+    else if (type==1) sprintf(function,"%s","importgatewayprocessed");
+    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
     {
         //printf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
@@ -587,7 +592,7 @@ void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys)
 
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
 {
-    cJSON *vin,*item,*vins = cJSON_CreateArray(); int32_t i,n,v; int64_t satoshis; bits256 txid;
+    cJSON *vin,*item,*vins = cJSON_CreateArray(); int32_t i,j=0,n,v; int64_t satoshis; bits256 txid;
     *totalp = 0;
     if ( (n= cJSON_GetArraySize(unspents)) > 0 )
     {
@@ -605,7 +610,10 @@ cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
                 jaddi(vins,vin);
                 *totalp += satoshis;
                 if ( (*totalp) >= required )
-                    break;
+                {
+                    if (j<3) j++;
+                    else break;
+                }
             }
         }
     }
@@ -692,10 +700,12 @@ cJSON *addsignature(char *refcoin,char *acname,char *rawtx, int M)
     return(0);
 }
 
-bits256 gatewayspartialsign(char *refcoin,char *acname,bits256 txid,char *hex)
+bits256 gatewayspartialsign(int8_t type,char *refcoin,char *acname,bits256 txid,char *hex)
 {
-    char str[65],*retstr; cJSON *retjson;
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"gatewayspartialsign",bits256_str(str,txid),refcoin,hex,"")) != 0 )
+    char str[65],*retstr; cJSON *retjson; char function[64];
+    if (type==0) sprintf(function,"%s","gatewayspartialsign");
+    else if (type==1) sprintf(function,"%s","importgatewaypartialsign");
+    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bits256_str(str,txid),refcoin,hex,"")) != 0 )
     {
         if (strcmp("error",jstr(retjson,"result"))!=0) txid=broadcasttx(refcoin,acname,retjson);  
         else printf("%s\n",jstr(retjson,"error"));
@@ -710,10 +720,13 @@ bits256 gatewayspartialsign(char *refcoin,char *acname,bits256 txid,char *hex)
     return (zeroid);
 }
 
-bits256 gatewayscompletesigning(char *refcoin,char *acname,bits256 withtxid,char *hex)
+bits256 gatewayscompletesigning(int8_t type,char *refcoin,char *acname,bits256 withtxid,char *hex)
 {
-    char str[65],*retstr; cJSON *retjson; bits256 txid;
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"gatewayscompletesigning",bits256_str(str,withtxid),refcoin,hex,"")) != 0 )
+    char str[65],*retstr; cJSON *retjson; bits256 txid; char function[64];
+
+    if (type==0) sprintf(function,"%s","gatewayscompletesigning");
+    else if (type==1) sprintf(function,"%s","importgatewaycompletesigning");
+    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bits256_str(str,withtxid),refcoin,hex,"")) != 0 )
     {
         if (strcmp("error",jstr(retjson,"result"))!=0) txid=broadcasttx(refcoin,acname,retjson);  
         else printf("%s\n",jstr(retjson,"error"));
@@ -728,10 +741,13 @@ bits256 gatewayscompletesigning(char *refcoin,char *acname,bits256 withtxid,char
     return (zeroid);
 }
 
-bits256 gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid)
+bits256 gatewaysmarkdone(int8_t type,char *refcoin,char *acname,bits256 withtxid)
 {
-    char str[65],str2[65],*retstr; cJSON *retjson; bits256 txid;    
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,withtxid),refcoin,"","")) != 0 )
+    char str[65],str2[65],*retstr; cJSON *retjson; bits256 txid; ; char function[64];
+
+    if (type==0) sprintf(function,"%s","gatewaysmarkdone");
+    else if (type==1) sprintf(function,"%s","importgatewaymarkdone");   
+    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bits256_str(str,withtxid),refcoin,"","")) != 0 )
     {
         if (strcmp("error",jstr(retjson,"result"))!=0) txid=broadcasttx(refcoin,acname,retjson);  
         else printf("%s\n",jstr(retjson,"error"));
@@ -746,10 +762,13 @@ bits256 gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid)
     return (zeroid);
 }
 
-int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr, char **pubkeys)
+int32_t get_gatewaysinfo(int8_t type,char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr, char **pubkeys)
 {
-    char *oracle,*retstr,*name,*deposit,temp[128]; cJSON *retjson,*pubarray; int32_t n;
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","","")) != 0 )
+    char *oracle,*retstr,*name,*deposit,temp[128]; cJSON *retjson,*pubarray; int32_t n; char function[64];
+
+    if (type==0) sprintf(function,"%s","gatewaysinfo");
+    else if (type==1) sprintf(function,"%s","importgatewayinfo");
+    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,"","","")) != 0 )
     {
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 && (deposit= jstr(retjson,"deposit")) != 0 )
         {
@@ -774,7 +793,6 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
                 strcat(*pubkeys,temp);
             }
         }
-        else printf("%s != %s\n",oracle,oraclestr);
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -851,7 +869,7 @@ int32_t markerexists(char *refcoin,char *acname,char *coinaddr)
             
 }
 
-void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t M,int32_t N)
+void update_gatewayspending(int8_t type,char *refcoin,char *acname,char *bindtxidstr,int32_t M,int32_t N)
 {
     // check queue to prevent duplicate
     // check KMD chain and mempool for txidaddr
@@ -864,7 +882,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
     int32_t i,j,n,K,retval,processed = 0; bits256 txid,cointxid,withdrawtxid,lasttxid,completetxid; int64_t satoshis;
 
     memset(&zeroid,0,sizeof(zeroid));
-    if ( (retjson= get_gatewayspending(refcoin,acname,bindtxidstr)) != 0 )
+    if ( (retjson= get_gatewayspending(type,refcoin,acname,bindtxidstr)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
         {
@@ -888,17 +906,18 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                 {
                                     if ( (clijson=addsignature(refcoin,"",rawtx,M)) != 0 && is_cJSON_True(jobj(clijson,"complete")) != 0)
                                     {                                        
-                                        txid=gatewayscompletesigning(refcoin,acname,withdrawtxid,jstr(clijson,"hex"));                                        
+                                        txid=gatewayscompletesigning(type,refcoin,acname,withdrawtxid,jstr(clijson,"hex"));                                        
                                         if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s 1of1\n",bits256_str(str,withdrawtxid));                                    
                                         else fprintf(stderr,"### SIGNING error broadcasting tx on %s",acname);
                                         free_json(clijson);
                                         processed++;
                                     }                                    
                                     free(rawtx);
-                                } else fprintf(stderr,"couldnt create rawtx\n");                               
+                                } else fprintf(stderr,"couldnt create rawtx\n");                        
                             }
                             else
                             {
+                                rawtx=0;
                                 lasttxid = jbits256(item,"last_txid");
                                 if ( lasttxid.txid==withdrawtxid.txid)
                                 {
@@ -906,24 +925,27 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                 }
                                 else rawtx=jstr(item,"hex");                                            
                                 K=jint(item,"number_of_signs");                   
-                                if ( rawtx!=0 && (clijson=addsignature(refcoin,"",rawtx,M)) != 0 )
+                                if (rawtx!=0)
                                 {
-                                    if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
-                                    {   
-                                        txid=gatewayscompletesigning(refcoin,acname,lasttxid,jstr(clijson,"hex"));                                          
-                                        if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %dof%d\n",bits256_str(str,withdrawtxid),K+1,N);
-                                        else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
-                                    }
-                                    else if ( jint(clijson,"partialtx") != 0 )
+                                    if ((clijson=addsignature(refcoin,"",rawtx,M)) != 0 )
                                     {
-                                        txid=gatewayspartialsign(refcoin,acname,lasttxid,jstr(clijson,"hex"));                                            
-                                        if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %d/%dof%d\n",bits256_str(str,withdrawtxid),K+1,M,N);
-                                        else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
-                                    }
-                                    free_json(clijson);
-                                    processed++;
-                                    if ( lasttxid.txid==withdrawtxid.txid) free(rawtx);                               
-                                }
+                                        if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
+                                        {   
+                                            txid=gatewayscompletesigning(type,refcoin,acname,lasttxid,jstr(clijson,"hex"));                                          
+                                            if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %dof%d\n",bits256_str(str,withdrawtxid),K+1,N);
+                                            else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
+                                        }
+                                        else if ( jint(clijson,"partialtx") != 0 )
+                                        {
+                                            txid=gatewayspartialsign(type,refcoin,acname,lasttxid,jstr(clijson,"hex"));                                            
+                                            if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %d/%dof%d\n",bits256_str(str,withdrawtxid),K+1,M,N);
+                                            else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
+                                        }
+                                        free_json(clijson);
+                                        processed++;
+                                        if ( lasttxid.txid==withdrawtxid.txid) free(rawtx);
+                                    }                            
+                                }  else fprintf(stderr,"couldnt create rawtx or find previous partial signed tx\n");
                             }
                         }
                     }
@@ -932,7 +954,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
         }
         free_json(retjson);
     }
-    if ( (retjson= get_gatewaysprocessed(refcoin,acname,bindtxidstr)) != 0 )
+    if ( (retjson= get_gatewaysprocessed(type,refcoin,acname,bindtxidstr)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
         {            
@@ -954,7 +976,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                         {
                             withdrawaddr = jstr(item,"withdrawaddr");   
                             fprintf(stderr,"### WITHDRAW %.8f %s sent to %s\n",amount,refcoin,withdrawaddr);                                                     
-                            txid=gatewaysmarkdone(refcoin,acname,completetxid);
+                            txid=gatewaysmarkdone(type,refcoin,acname,completetxid);
                             if (txid.txid!=zeroid.txid) fprintf(stderr,"### MARKDONE withdraw %s\n",bits256_str(str,withdrawtxid));
                             else fprintf(stderr,"### MARKDONE error broadcasting tx on %s\n",refcoin);
                         }
@@ -1024,7 +1046,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *pubkeys,*format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t type,i,retval,M,N,n,height,prevheight = 0; char *pubkeys,*format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
     if ( argc < 6 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
@@ -1044,8 +1066,7 @@ int32_t main(int32_t argc,char **argv)
         printf("only formats of L and Ihh are supported now\n");
         return(-1);
     }
-    M = N = 1;
-    acheight = 0;
+    M = N = 0;
     refcoin[0] = 0;
     while ( 1 )
     {
@@ -1061,7 +1082,9 @@ int32_t main(int32_t argc,char **argv)
                     exit(0);
                 }
                 pubkeys=0;
-                if ( get_gatewaysinfo(refcoin,acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,&pubkeys) < 0 )
+                if ( get_gatewaysinfo(0,refcoin,acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,&pubkeys) == 0 ) type=0;
+                else if ( get_gatewaysinfo(1,refcoin,acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,&pubkeys) == 0 ) type=1;
+                else
                 {
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
@@ -1089,9 +1112,8 @@ int32_t main(int32_t argc,char **argv)
                                 if ( bits256_nonz(txid) != 0 )
                                 {
                                     prevheight = height;
-                                    acheight = get_coinheight(refcoin,"");
                                     printf("%s ht.%d <- %s\n",refcoin,height,hexstr);   
-                                    update_gatewayspending(refcoin,acname,bindtxidstr,M,N);                                                                 
+                                    update_gatewayspending(type,refcoin,acname,bindtxidstr,M,N);
                                 }                                
                                 free_json(clijson2);
                             }

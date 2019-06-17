@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/KomodoPlatform/komodo.svg?branch=dev)](https://travis-ci.org/KomodoPlatform/komodo)
+[![Build Status](https://travis-ci.org/KomodoPlatform/komodo.svg?branch=master)](https://travis-ci.org/KomodoPlatform/komodo)
 ---
 ![Komodo Logo](https://i.imgur.com/vIwVtqv.png "Komodo Logo")
 
@@ -38,7 +38,7 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 
 ## Tech Specification
 - Max Supply: 200 million KMD
-- Block Time: 1m 2s
+- Block Time: 60 seconds
 - Block Reward: 3 KMD
 - Mining Algorithm: Equihash
 
@@ -84,7 +84,7 @@ brew update
 brew upgrade
 brew tap discoteq/discoteq; brew install flock
 brew install autoconf autogen automake
-brew install gcc@6
+brew update && brew install gcc@8
 brew install binutils
 brew install protobuf
 brew install coreutils

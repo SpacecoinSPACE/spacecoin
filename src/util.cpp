@@ -394,6 +394,26 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
+// split string using by space or comma as a delimiter char
+void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
+{
+    stringstream ss(strVal);
+    
+    while (!ss.eof()) {
+        int c;
+        std::string str;
+
+        while (std::isspace(ss.peek()))
+            ss.ignore();
+
+        while ((c = ss.get()) != EOF && !std::isspace(c) && c != ',')
+            str += c;
+
+        if (!str.empty())
+            outVals.push_back(str);
+    }
+}
+
 void Split(const std::string& strVal, uint64_t *outVals, const uint64_t nDefault)
 {
     stringstream ss(strVal);
