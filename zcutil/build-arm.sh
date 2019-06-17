@@ -44,7 +44,7 @@ HOST=aarch64-unknown-linux-gnu BUILD=aarch64-unknown-linux-gnu make "$@" -C ./de
 WD=$PWD
 cd src/cc
 echo $PWD
-./makerogue
+./makecustom
 cd $WD
 
 make "$@" V=1
