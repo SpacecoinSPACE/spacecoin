@@ -5,10 +5,10 @@ endif
 zcash_packages := libsnark libgmp libsodium
 
 ifeq ($(build_os),darwin)
-	zcash_packages := libsnark libgmp libsodium
+	zcash_packages := libsnark libgmp libsodium utfcpp
 else
-#	proton_packages := proton
-	zcash_packages := libgmp libsodium
+	proton_packages := proton
+	zcash_packages := libgmp libsodium utfcpp
 endif
 
 rust_crates := \

@@ -1,6 +1,6 @@
 package=libsnark
 $(package)_version=0.1
-$(package)_download_path=https://github.com/zcash/$(package)/archive/
+$(package)_download_path=https://github.com/ca333/libsnark/releases/download/v$($(package)_version)-$($(package)_git_commit)/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
 $(package)_sha256_hash=93eafebf315651006a37d086341e34b8e73bc33701157e77d9a423d99a7bec24
