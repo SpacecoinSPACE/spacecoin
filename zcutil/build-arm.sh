@@ -37,7 +37,7 @@ PREFIX="$(pwd)/depends/aarch64-unknown-linux-gnu/"
 
 HOST=aarch64-unknown-linux-gnu BUILD=aarch64-unknown-linux-gnu make "$@" -C ./depends/ V=1 NO_QT=1
 ./autogen.sh
-CONFIG_SITE="$(pwd)/depends/aarch64-unknown-linux-gnu/share/config.site" ./configure --prefix="${PREFIX}" --host=aarch64-unknown-linux-gnu --build=aarch64-unknown-linux-gnu --with-gui=no --enable-rust=no --disable-proton "$HARDENING_ARG" "$LCOV_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -g'
+CONFIG_SITE="$(pwd)/depends/aarch64-unknown-linux-gnu/share/config.site" ./configure --prefix="${PREFIX}" --host=aarch64-unknown-linux-gnu --build=aarch64-unknown-linux-gnu --with-gui=no --enable-rust=no --enable-tests=no --disable-proton "$HARDENING_ARG" "$LCOV_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -g'
 
 #BUILD CCLIB
 
