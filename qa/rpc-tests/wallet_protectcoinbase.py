@@ -25,7 +25,7 @@ def check_value_pool(node, name, total):
             assert_equal(pool['chainValueZat'], total * COIN)
     assert(found)
 
-class WalletProtectCoinbaseTest (BitcoinTestFramework):
+class Wallet2Test (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

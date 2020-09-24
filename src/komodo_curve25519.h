@@ -81,7 +81,7 @@ bits320 fexpand(bits256 basepoint)
     return(out);
 }
 
-#if __amd64__
+//#if __amd64__
 // donna: special gcc mode for 128-bit integers. It's implemented on 64-bit platforms only as far as I know.
 typedef unsigned uint128_t __attribute__((mode(TI)));
 
@@ -1010,4 +1010,4 @@ int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig)
     return(0);
 }
 
-#endif
+//#endif

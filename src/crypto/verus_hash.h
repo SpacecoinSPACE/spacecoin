@@ -11,11 +11,9 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #include <cstring>
 #include <vector>
 
-#include <cpuid.h>
 
 extern "C" 
 {
-#include "crypto/haraka.h"
 #include "crypto/haraka_portable.h"
 }
 
@@ -86,7 +84,7 @@ class CVerusHashV2
             result = buf2;
             curPos = 0;
             std::fill(buf1, buf1 + sizeof(buf1), 0);
-            return *this;
+            return *this; 
         }
 
         int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }
@@ -122,13 +120,13 @@ extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 inline bool IsCPUVerusOptimized()
 {
-    unsigned int eax,ebx,ecx,edx;
+  //    unsigned int eax,ebx,ecx,edx;
 
-    if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
-    {
+  //    if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
+  //    {
         return false;
-    }
-    return ((ecx & (bit_AVX | bit_AES)) == (bit_AVX | bit_AES));
+	//    }
+	//    return ((ecx & (bit_AVX | bit_AES)) == (bit_AVX | bit_AES));
 };
 
 #endif

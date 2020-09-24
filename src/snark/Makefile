@@ -15,7 +15,7 @@ endif
 
 # To override these, use "make OPTFLAGS=..." etc.
 CURVE = BN128
-OPTFLAGS = -O2 -march=x86-64 -g -mtune=x86-64
+OPTFLAGS = -O2 
 
 ifneq ($(PLATFORM),darwin)
 	FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT
@@ -166,7 +166,7 @@ ifeq ($(DEBUG),1)
 endif
 
 ifeq ($(PERFORMANCE),1)
-        OPTFLAGS = -O3 -march=x86-64 -g -mtune=x86-64
+        OPTFLAGS = -O3 
         CXXFLAGS += -DNDEBUG
         # Enable link-time optimization:
         CXXFLAGS += -flto -fuse-linker-plugin
