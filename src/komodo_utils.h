@@ -1748,6 +1748,22 @@ void komodo_args(char *argv0)
         fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
         StartShutdown();
     }
+
+		// Spacecoin (SPACE) parameters (start SPACE by default)
+
+		SoftSetArg("-ac_name", std::string("SPACE"));
+		SoftSetArg("-ac_supply", std::string("0"));
+		SoftSetArg("-ac_eras", std::string("6"));
+		SoftSetArg("-ac_reward", std::string("3600000000,2700000000,1800000000,900000000,600000000,300000000"));
+		SoftSetArg("-ac_end", std::string("939393,3757572,12212109,325343422,638474735,951606048"));
+		SoftSetArg("-ac_blocktime", std::string("30"));
+		SoftSetArg("-ac_staked", std::string("50"));
+		SoftSetArg("-ac_cbmaturity", std::string("1"));
+		SoftSetArg("-ac_cc", std::string("939"));
+		SoftSetArg("-ac_sapling", std::string("1"));
+		vector<string> SPACEnodes = { "165.227.35.158", "167.172.39.135", "165.22.64.156", "188.166.221.247", "164.90.145.140", "188.40.53.201", "94.130.38.173" };
+	  mapMultiArgs["-addnode"] = SPACEnodes;
+		
 	name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {
@@ -2494,7 +2510,7 @@ void komodo_prefetch(FILE *fp)
 }
 
 // check if block timestamp is more than S5 activation time
-// this function is to activate the ExtractDestination fix 
+// this function is to activate the ExtractDestination fix
 bool komodo_is_vSolutionsFixActive()
 {
     return GetLatestTimestamp(komodo_currentheight()) > nS5Timestamp;
