@@ -3,7 +3,7 @@
 [![discord](https://img.shields.io/discord/701937565929963581)](https://spaceworks.co/discord)
 
 ---
-![Spacecoin Logo](https://i.imgur.com/jXUcvgy.png "Spacecoin Logo")
+![Spacecoin Logo](https://i.imgur.com/FlGoFAz.png "Spacecoin Logo")
 
 
 ## Spacecoin (SPACE)
@@ -12,11 +12,11 @@ This is the official Spacecoin source code repository based on [KomodoPlatform/K
 
 ## Resources
 
-- Website: [https://spaceworks.co](https://spaceworks.co/)
-- Block Explorer: [https://explorer.spaceworks.co](https://explorer.spaceworks.co/)
-- Discord: [https://spaceworks.co/discord](https://spaceworks.co/discord)
-- Mail: [hello@spaceworks.co](mailto:hello@spaceworks.co)
-- Support: [#support channel on discord](https://spaceworks.co/discord)
+- Website: [spacecoin.network](https://spacecoin.network/)
+- Block Explorer: [spacecoinexplorer.com](https://spacecoinexplorer.com)
+- Discord: [spacecoin.network/discord](https://spacecoin.network/discord)
+- Mail: [hello@spacecoin.network](mailto:hello@spacecoin.network)
+- Support: The `#support` channel on the [Spacecoin Discord](https://spacecoin.network/discord)
 
 ## Tech Specification
 - Max Supply: 5,898,454,281 SPACE
