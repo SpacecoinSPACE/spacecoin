@@ -164,6 +164,9 @@ src/Makefile.in
 src/cc/customcc.so
 src/libcc.so
 
+SPACE_7776
 src/SPACE_7776
 src/tSPACE_7776
-
+src/spacecoind
+src/spacecoin-cli
+src/spacecoin-tx
